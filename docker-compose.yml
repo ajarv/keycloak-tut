@@ -1,0 +1,63 @@
+version: "3.7"
+
+volumes:
+  pg_kk_data:
+      driver: local
+
+services:
+  postgres:
+      image: postgres
+      volumes:
+        - pg_kk_data:/var/lib/postgresql/data
+      environment:
+        POSTGRES_DB: keycloak
+        POSTGRES_USER: keycloak
+        POSTGRES_PASSWORD: password
+
+  keycloak:
+      image: jboss/keycloak:11.0.0
+      environment:
+        DB_VENDOR: POSTGRES
+        DB_ADDR: postgres
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_SCHEMA: public
+        DB_PASSWORD: password
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD: password
+        KEYCLOAK_IMPORT: /tmp/realm-export.json
+        # ROOT_LOGLEVEL: DEBUG
+        # KEYCLOAK_LOGLEVEL: DEBUG
+        # Uncomment the line below if you want 
+        #to specify JDBC parameters. The parameter below is just an example, and it 
+        #shouldn't be used in production without knowledge. It is highly 
+        #recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
+        #JDBC_PARAMS: "ssl=true"
+      ports:
+        - 8080:8080
+        - 8443:8443
+      depends_on:
+        - postgres
+      volumes:
+      - ./kkcfg/docker-entrypoint.sh:/opt/jboss/tools/docker-entrypoint.sh
+      - ./kkcfg/realm-export.json:/tmp/realm-export.json
+      # - ./kkcfg/standalone-ha.xml:/opt/jboss/keycloak/standalone/configuration/standalone-ha.xml
+      # - ./kkcfg/trust.jks:/opt/jboss/keycloak/trust.jks
+      # - ./kkcfg/ecs-script-mapper.jar:/opt/jboss/keycloak/standalone/deployments/ecs-script-mapper.jar
+      
+      
+
+  # api:
+  #   image: api
+  #   build: ./api
+  #   container_name: api
+  #   ports:
+  #     - "5000:5000"
+  #   volumes:
+  #     - ./api:/app
+  #   environment:
+  #     # OIDC_CLIENT_SECRETS: /app/cfg/client_secrets_local.json
+  #     OIDC_CLIENT_SECRETS: /app/cfg/client_secrets.json
+  #     REQUESTS_CA_BUNDLE: /app/cfg/ca-bundle.crt
+  #   depends_on:
+  #     - keycloak
